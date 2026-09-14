@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#090b10" />
+  <meta name="description" content="Explore any place on Earth through time with an interactive AI-powered historical globe." />
+  <title>god-eye-history</title>
+</head>
+<body>
+  <div id="app">
+    <div id="cesiumContainer" aria-label="Interactive historical globe"></div>
+
+    <header class="topbar glass">
+      <button id="brandButton" class="brand" aria-label="Home">
+        <span class="brand-mark">◎</span>
+        <span>GOD-EYE-HISTORY</span>
+      </button>
+
+      <form id="searchForm" class="search-wrap" autocomplete="off">
+        <span class="search-icon">⌕</span>
+        <input id="searchInput" aria-label="Search place or history" placeholder="London on 15 August 1960, Berlin Wall, Pompeii…" />
+        <kbd>/</kbd>
+      </form>
+
+      <div class="top-actions">
+        <button id="surpriseBtn" class="ghost-btn">Surprise me</button>
+        <button id="askBtn" class="accent-btn">Ask History</button>
+      </div>
+    </header>
+
+    <aside id="leftRail" class="left-rail glass">
+      <button class="rail-btn active" data-panel="layers" title="Historical layers">◫<span>Layers</span></button>
+      <button class="rail-btn" data-panel="compare" title="Then and now">◩<span>Compare</span></button>
+      <button class="rail-btn" data-panel="stories" title="Historical stories">▶<span>Stories</span></button>
+      <button class="rail-btn" data-panel="present" title="Present-day context">◉<span>Present</span></button>
+      <button class="rail-btn" data-panel="annotations" title="Annotations">✎<span>Annotate</span></button>
+      <button class="rail-btn" data-panel="settings" title="Settings">⚙<span>Settings</span></button>
+    </aside>
+
+    <section id="leftPanel" class="side-panel left-panel glass">
+      <div class="panel-head">
+        <div>
+          <div class="eyebrow">EXPLORE</div>
+          <h2 id="leftPanelTitle">Historical layers</h2>
+        </div>
+        <button class="icon-btn" data-close="left">×</button>
+      </div>
+      <div id="leftPanelBody" class="panel-body"></div>
+    </section>
+
+    <aside id="historyPanel" class="history-panel glass">
+      <div class="panel-head">
+        <div>
+          <div class="eyebrow" id="scopeLabel">CURRENT VIEW</div>
+          <h2 id="placeTitle">Explore Earth through time</h2>
+          <div id="placeSubtitle" class="muted">Click anywhere or search for a place</div>
+        </div>
+        <button id="closeHistory" class="icon-btn">×</button>
+      </div>
+      <div id="historySummary" class="history-summary"></div>
+      <div id="eventList" class="event-list"></div>
+    </aside>
+
+    <section id="eventDrawer" class="event-drawer glass" aria-live="polite">
+      <button id="closeEvent" class="icon-btn event-close">×</button>
+      <div id="eventDetail"></div>
+    </section>
+
+    <section id="askPanel" class="ask-panel glass">
+      <div class="panel-head">
+        <div>
+          <div class="eyebrow">GROUNDED AI HISTORIAN</div>
+          <h2>Ask History</h2>
+        </div>
+        <button id="closeAsk" class="icon-btn">×</button>
+      </div>
+      <div id="chatMessages" class="chat-messages">
+        <div class="chat assistant">
+          Ask about the selected place, date, event, or anything visible on the globe. I use retrieved historical sources before answering.
+        </div>
+      </div>
+      <div class="quick-prompts">
+        <button>What happened here?</button>
+        <button>What was here before?</button>
+        <button>What happened elsewhere on this date?</button>
+      </div>
+      <form id="askForm" class="ask-form">
+        <button id="voiceBtn" type="button" class="icon-btn" title="Voice">◉</button>
+        <textarea id="askInput" rows="2" placeholder="Ask a historical question…"></textarea>
+        <button class="accent-btn" type="submit">Ask</button>
+      </form>
+    </section>
+
+    <section id="timelinePanel" class="timeline-panel glass">
+      <div class="timeline-top">
+        <div class="date-box">
+          <button id="prevDate" class="icon-btn">‹</button>
+          <input id="dateInput" type="date" value="1960-08-15" />
+          <button id="nextDate" class="icon-btn">›</button>
+        </div>
+        <div class="timeline-controls">
+          <button id="playTimeline" class="round-btn" title="Play history">▶</button>
+          <select id="timelineSpeed" aria-label="Playback speed">
+            <option value="day">1 day/sec</option>
+            <option value="month">1 month/sec</option>
+            <option value="year" selected>1 year/sec</option>
+            <option value="decade">10 years/sec</option>
+          </select>
+          <button id="sameDayBtn" class="ghost-btn">Same day worldwide</button>
+        </div>
+      </div>
+      <div class="timeline-track-wrap">
+        <input id="yearSlider" type="range" min="-500" max="2026" value="1960" />
+        <div class="timeline-labels">
+          <span>500 BCE</span><span>0</span><span>1000</span><span>1500</span><span>1900</span><span>2026</span>
+        </div>
+      </div>
+    </section>
+
+    <div id="hud" class="hud glass">
+      <div><span class="hud-k">DATE</span><span id="hudDate">15 AUG 1960</span></div>
+      <div><span class="hud-k">EVENTS</span><span id="hudEvents">0</span></div>
+      <div><span class="hud-k">SCOPE</span><span id="hudScope">WORLD</span></div>
+      <div><span class="hud-k">AI</span><span id="hudAi">AUTO</span></div>
+    </div>
+
+    <div id="toastHost" class="toast-host" aria-live="polite"></div>
+
+    <div id="firstRun" class="first-run">
+      <div class="first-run-card glass">
+        <div class="brand large"><span class="brand-mark">◎</span><span>GOD-EYE-HISTORY</span></div>
+        <h1>Where would you like to travel?</h1>
+        <p>Explore any place on Earth through time.</p>
+        <div class="journey-grid">
+          <button data-journey="place"><b>⌕ Explore a place</b><span>Search any city, street, landmark, or region</span></button>
+          <button data-journey="time"><b>◴ Travel through time</b><span>Pick a date, year, century, or era</span></button>
+          <button data-journey="story"><b>▶ Famous moments</b><span>Launch a guided historical journey</span></button>
+          <button data-journey="today"><b>◉ This day in history</b><span>See the same calendar day across years</span></button>
+        </div>
+        <button id="skipFirstRun" class="ghost-btn wide">Open globe</button>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

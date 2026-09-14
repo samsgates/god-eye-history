@@ -1,0 +1,14 @@
+{
+  "settings":{"index":{"knn":true}},
+  "mappings":{"properties":{
+    "title":{"type":"text","fields":{"keyword":{"type":"keyword"}}},
+    "description":{"type":"text"},
+    "historical_place_name":{"type":"text"},
+    "modern_place_name":{"type":"text"},
+    "categories":{"type":"keyword"},
+    "date_start":{"type":"date"},
+    "location":{"type":"geo_point"},
+    "importance_score":{"type":"float"},
+    "confidence_score":{"type":"float"}
+  }}
+}

@@ -1,0 +1,5 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>god-eye-history admin</title>
+<style>body{font:14px system-ui;background:#0a0c11;color:#eef2f7;margin:30px;max-width:1100px}h1{font-size:28px}.card{border:1px solid #29313d;border-radius:12px;padding:18px;margin:12px 0;background:#10141b}pre{white-space:pre-wrap;color:#b7ff72}button{padding:9px 12px}</style></head>
+<body><h1>god-eye-history · Admin</h1><div class="card"><h2>Data quality</h2><button onclick="load()">Refresh</button><pre id="out">Loading…</pre></div>
+<div class="card"><h2>Operational areas</h2><p>Events · Sources · Ingestion · AI providers · Models · Prompts · Usage · Stories · Data quality · Licensing · System health.</p><p>This lightweight console intentionally exposes only read-only quality data in the starter production surface. Put full administrative mutations behind your identity provider/RBAC before deployment.</p></div>
+<script>async function load(){const r=await fetch('/api/admin/quality');out.textContent=JSON.stringify(await r.json(),null,2)}load()</script></body></html>

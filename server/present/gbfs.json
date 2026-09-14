@@ -1,0 +1,6 @@
+{
+  "systems": [
+    {"name":"Citi Bike NYC","url":"https://gbfs.citibikenyc.com/gbfs/gbfs.json"},
+    {"name":"Santander Cycles London","url":"https://api.tfl.gov.uk/BikePoint"}
+  ]
+}

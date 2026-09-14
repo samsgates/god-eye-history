@@ -1,0 +1,42 @@
+{
+  "name": "god-eye-history",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "AI-powered interactive historical Earth built on the God's Eye View/Cesium architecture.",
+  "engines": {
+    "node": ">=24.14.0 <25 || >=26 <27"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "vite --host 0.0.0.0 --port 4173",
+    "dev:api": "node --watch server/index.js",
+    "build": "vite build",
+    "start": "NODE_ENV=production node server/index.js",
+    "test": "node --test tests/*.test.js",
+    "doctor": "node scripts/doctor.mjs",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:seed": "node scripts/seed.mjs",
+    "ingest:wikidata": "node workers/ingest-wikidata.mjs",
+    "ingest:europeana": "node workers/ingest-europeana.mjs",
+    "zip": "node scripts/package.mjs"
+  },
+  "dependencies": {
+    "@mapbox/vector-tile": "^3.0.0",
+    "bcryptjs": "^3.0.2",
+    "cesium": "^1.124.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "ioredis": "^5.7.0",
+    "jsonwebtoken": "^9.0.2",
+    "pbf": "^5.0.2",
+    "pg": "^8.16.3",
+    "vite": "^6.1.0",
+    "vite-plugin-cesium": "^1.2.23",
+    "ws": "^8.18.3",
+    "zod": "^4.1.5"
+  },
+  "devDependencies": {}
+}

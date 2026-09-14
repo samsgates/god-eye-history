@@ -1,0 +1,22 @@
+export const config = {
+  port:Number(process.env.PORT||8787),
+  appUrl:process.env.PUBLIC_APP_URL||'http://localhost:4173',
+  jwtSecret:process.env.JWT_SECRET||'development-only-change-me',
+  databaseUrl:process.env.DATABASE_URL||'',
+  redisUrl:process.env.REDIS_URL||'',
+  openSearchUrl:process.env.OPENSEARCH_URL||'',
+  cesiumIonToken:process.env.CESIUM_ION_TOKEN||'',
+  googleMapsApiKey:process.env.GOOGLE_MAPS_API_KEY||'',
+  europeanaKey:process.env.EUROPEANA_API_KEY||'',
+  wikimediaUserAgent:process.env.WIKIMEDIA_USER_AGENT||'god-eye-history/1.0',
+  defaultAiProvider:process.env.DEFAULT_AI_PROVIDER||'auto',
+  aiFallback:process.env.AI_FALLBACK_PROVIDER||'gemini',
+  aiSecondaryFallback:process.env.AI_SECONDARY_FALLBACK||'claude',
+  openai:{key:process.env.OPENAI_API_KEY||'',fast:process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna',reasoning:process.env.OPENAI_REASONING_MODEL||'gpt-5.6-sol'},
+  gemini:{key:process.env.GEMINI_API_KEY||'',fast:process.env.GEMINI_FAST_MODEL||'gemini-3.8-flash',reasoning:process.env.GEMINI_REASONING_MODEL||'gemini-3.8-flash'},
+  claude:{key:process.env.ANTHROPIC_API_KEY||'',fast:process.env.CLAUDE_FAST_MODEL||'claude-sonnet-5',reasoning:process.env.CLAUDE_REASONING_MODEL||'claude-opus-5'},
+  present:{
+    openskyClientId:process.env.OPENSKY_CLIENT_ID||'',openskyClientSecret:process.env.OPENSKY_CLIENT_SECRET||'',
+    firmsKey:process.env.NASA_FIRMS_MAP_KEY||'',tomtomKey:process.env.TOMTOM_API_KEY||'',tflKey:process.env.TFL_APP_KEY||''
+  }
+};
