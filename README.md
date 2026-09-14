@@ -4,6 +4,8 @@
 
 `god-eye-history` is an AI-powered historical Earth experience built around the same Cesium-first spatial architecture that makes God's Eye View compelling, but with history as the default coordinate system.
 
+![God Eye History features overview](media_resources/features.png)
+
 ## What is implemented
 
 - Cesium 3D globe with click-anywhere exploration
@@ -32,6 +34,10 @@
 - admin data-quality endpoint
 - Docker, migrations, seed data, workers and tests
 - keyless graceful-degradation mode
+
+## How it works
+
+![God Eye History exploration workflow](media_resources/howitsworks-diagram.png)
 
 ## Quick start
 
@@ -79,6 +85,10 @@ ST_DWithin(event.location, selected_point, radius)
 AND event.date_start <= selected_end
 AND event.date_end >= selected_start
 ```
+
+## Architecture
+
+![God Eye History high-level architecture](media_resources/highlevel-architecture-diagram.png)
 
 ## Production data
 
