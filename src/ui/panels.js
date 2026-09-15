@@ -9,8 +9,8 @@ const HIST_LAYERS=[
 ];
 
 export class PanelManager{
-  constructor({compare,present,story,annotations,globe,history}){
-    this.deps={compare,present,story,annotations,globe,history};
+  constructor({compare,present,story,annotations,globe,history,exploration}){
+    this.deps={compare,present,story,annotations,globe,history,exploration};
     this.panel=document.getElementById('leftPanel');this.title=document.getElementById('leftPanelTitle');this.body=document.getElementById('leftPanelBody');
     document.querySelectorAll('.rail-btn').forEach(b=>b.onclick=()=>this.open(b.dataset.panel,b));
     document.querySelector('[data-close="left"]').onclick=()=>this.panel.classList.remove('open');

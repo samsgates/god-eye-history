@@ -20,22 +20,27 @@ export class TimelineController{
     document.getElementById('nextDate').onclick=()=>this.applyDate(addDate(state.selectedDate,'year',1));
     this.play.onclick=()=>this.toggle();
   }
-  applyDate(date){
+  applyDate(date,{notify=true}={}){
     if(!date)return;
     setDate(date);
+    update({dateRange:{start:date,end:date}});
     this.dateInput.value=date;
     this.slider.value=Math.max(-500,Math.min(2026,Number(date.slice(0,4))));
     document.getElementById('hudDate').textContent=fmtDate(date);
     if(this.globe) this.globe.setHistoricalDate(Number(date.slice(0,4)));
-    this.onDateChange?.(date);
+    if(notify)this.onDateChange?.(date);
   }
   toggle(){
-    if(this.timer){clearInterval(this.timer);this.timer=null;this.play.textContent='▶';update({playing:false});return}
+    if(this.timer){this.stop();return}
     this.play.textContent='Ⅱ'; update({playing:true});
     this.timer=setInterval(()=>{
       const next=addDate(state.selectedDate,this.speed.value,1);
       if(Number(next.slice(0,4))>2026){this.toggle();return}
       this.applyDate(next);
     },1000);
+  }
+  stop(){
+    if(this.timer)clearInterval(this.timer);
+    this.timer=null;this.play.textContent='▶';update({playing:false});
   }
 }

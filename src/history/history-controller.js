@@ -5,6 +5,9 @@ import { fmtDate, escapeHtml, toast } from '../core/utils.js';
 export class HistoryController{
   constructor(globe){
     this.globe=globe;
+    this.loadVersion=0;
+    this.eventVersion=0;
+    this.placeVersion=0;
     this.eventList=document.getElementById('eventList');
     this.summary=document.getElementById('historySummary');
     this.title=document.getElementById('placeTitle');
@@ -12,8 +15,41 @@ export class HistoryController{
     this.scope=document.getElementById('scopeLabel');
     this.detail=document.getElementById('eventDetail');
   }
+  resetContext(){
+    this.loadVersion++;
+    this.eventVersion++;
+    update({events:[],selectedEvent:null});
+    this.globe.renderEvents([]);
+    document.getElementById('hudEvents').textContent='0';
+    document.getElementById('eventDrawer').classList.remove('open');
+    this.detail.replaceChildren();
+    this.summary.replaceChildren();
+    document.dispatchEvent(new CustomEvent('history-context-changed'));
+  }
+  beginSearch(query){
+    this.placeVersion++;
+    this.resetContext();
+    update({place:null});
+    this.title.textContent=`Searching · ${query}`;
+    this.subtitle.textContent='Finding a place and historical records';
+    this.scope.textContent='SEARCH';
+    document.getElementById('hudScope').textContent='SEARCH';
+    this.eventList.innerHTML='<div class="event-card">Finding place…</div>';
+  }
+  showSearchFailure(query,message='No matching place found'){
+    this.title.textContent='No place found';
+    this.subtitle.textContent=query;
+    this.scope.textContent='SEARCH';
+    this.eventList.innerHTML=`<div class="event-card"><h3>${escapeHtml(message)}</h3><p>Try a city, landmark, or region followed by a year or exact date.</p></div>`;
+  }
+  closeEvent(){
+    this.eventVersion++;
+    update({selectedEvent:null});
+    document.getElementById('eventDrawer').classList.remove('open');
+    this.detail.replaceChildren();
+  }
   async selectPlace(place,{fly=true,load=true}={}){
-    update({place});
+    update({place,historyScope:'place'});
     this.title.textContent=place.name||'Selected place';
     this.subtitle.textContent=[place.region,place.country].filter(Boolean).join(', ') || `${place.lat?.toFixed?.(4)}, ${place.lng?.toFixed?.(4)}`;
     this.scope.textContent='PLACE HISTORY';
@@ -21,29 +57,36 @@ export class HistoryController{
     if(load) await this.loadEvents();
   }
   async mapClick({lat,lng}){
+    const placeVersion=++this.placeVersion;
     try{
       const result=await api.reverse(lat,lng);
+      if(placeVersion!==this.placeVersion)return;
       const place=result.place||{name:`${lat.toFixed(3)}, ${lng.toFixed(3)}`,lat,lng,type:'point'};
       place.lat=lat; place.lng=lng;
       await this.selectPlace(place,{fly:false});
     }catch(e){
+      if(placeVersion!==this.placeVersion)return;
       await this.selectPlace({name:'Selected location',lat,lng,type:'point'},{fly:false});
     }
   }
   async loadEvents(extra={}){
     const p=state.place;
     if(!p)return;
+    this.resetContext();
+    const loadVersion=this.loadVersion;
     this.eventList.innerHTML='<div class="event-card">Searching historical records…</div>';
     const params={
-      lat:p.lat,lng:p.lng,radius:state.radiusKm,start:state.selectedDate,end:state.selectedDate,
+      lat:p.lat,lng:p.lng,radius:state.radiusKm,start:state.dateRange.start,end:state.dateRange.end,
       categories:state.filters.categories.join(','),importance:state.filters.importance,...extra
     };
     try{
       const res=await api.events(params);
+      if(loadVersion!==this.loadVersion)return;
       update({events:res.events||[]});
       this.globe.renderEvents(state.events);
       this.renderEvents(res);
     }catch(e){
+      if(loadVersion!==this.loadVersion)return;
       this.eventList.innerHTML=`<div class="event-card"><h3>Could not load history</h3><p>${escapeHtml(e.message)}</p></div>`;
       toast('History source unavailable');
     }
@@ -69,8 +112,10 @@ export class HistoryController{
     this.eventList.querySelectorAll('[data-event]').forEach(b=>b.onclick=()=>this.openEvent(b.dataset.event));
   }
   async openEvent(id){
+    const eventVersion=++this.eventVersion;
     try{
-      const data=await api.event(id); const e=data.event;
+      const e=state.events.find(event=>String(event.id)===String(id))||(await api.event(id)).event;
+      if(eventVersion!==this.eventVersion)return;
       update({selectedEvent:e}); this.globe.flyToEvent(e);
       this.detail.innerHTML=`
         <div class="event-hero">
@@ -91,11 +136,37 @@ export class HistoryController{
     }catch(e){toast(e.message)}
   }
   async sameDayWorldwide(){
+    this.resetContext();
+    const loadVersion=this.loadVersion;
+    update({historyScope:'global',dateRange:{start:state.selectedDate,end:state.selectedDate}});
+    this.eventList.innerHTML='<div class="event-card">Searching historical records…</div>';
     try{
       const res=await api.day(state.selectedDate);
+      if(loadVersion!==this.loadVersion)return;
       update({events:res.events||[]}); this.globe.renderEvents(state.events); this.renderEvents({...res,scope:'global'});
       this.globe.flyTo({lat:20,lng:0,height:17500000});
       this.title.textContent=`World · ${fmtDate(state.selectedDate)}`; this.subtitle.textContent='Same day around the world';
-    }catch(e){toast(e.message)}
+      this.scope.textContent='WORLD HISTORY';
+    }catch(e){if(loadVersion===this.loadVersion)toast(e.message)}
+  }
+  async thisDay(monthDay){
+    this.placeVersion++;
+    this.resetContext();
+    const loadVersion=this.loadVersion;
+    update({place:null,historyScope:'this-day'});
+    this.title.textContent='This day in history';
+    this.subtitle.textContent='Searching the same calendar day across years';
+    this.scope.textContent='WORLD HISTORY';
+    document.getElementById('hudScope').textContent='GLOBAL';
+    this.eventList.innerHTML='<div class="event-card">Searching this day through history…</div>';
+    try{
+      const res=await api.thisDay(monthDay);
+      if(loadVersion!==this.loadVersion)return;
+      update({events:res.events||[]});
+      this.globe.renderEvents(state.events);
+      this.renderEvents({...res,scope:'global'});
+      this.subtitle.textContent=`Worldwide events on ${monthDay}`;
+      this.globe.flyTo({lat:20,lng:0,height:17500000});
+    }catch(e){if(loadVersion===this.loadVersion)toast(e.message)}
   }
 }

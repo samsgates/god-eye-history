@@ -36,7 +36,8 @@ app.get('/api/history/day/:date',async(req,res,next)=>{try{res.json(await sameDa
 app.get('/api/history/media',async(req,res,next)=>{try{res.json({items:await mediaFor(req.query)})}catch(e){next(e)}});
 app.get('/api/history/what-was-here',async(req,res,next)=>{try{
   const years=['1000-01-01','1500-01-01','1750-01-01','1850-01-01','1900-01-01','1925-01-01','1950-01-01','1975-01-01','2000-01-01','2026-01-01'];
-  const all=[];for(let i=0;i<years.length-1;i++){const r=await searchEvents({...req.query,start:years[i],end:years[i+1]});all.push(...r.events.slice(0,20))}
+  const periods=await Promise.all(years.slice(0,-1).map((start,i)=>searchEvents({...req.query,start,end:years[i+1],includeMedia:false})));
+  const all=periods.flatMap(result=>result.events.slice(0,20));
   const seen=new Set();const events=all.filter(e=>!seen.has(e.id)&&seen.add(e.id)).sort((a,b)=>String(a.date_start||'').localeCompare(String(b.date_start||'')));
   res.json({events,scope:'through time',confidence:events.length?.72:.4,media_count:0});
 }catch(e){next(e)}});
@@ -114,8 +115,8 @@ app.get('/api/admin/quality',async(req,res,next)=>{try{
 
 if(process.env.NODE_ENV==='production'){
   const __dirname=path.dirname(fileURLToPath(import.meta.url));const dist=path.resolve(__dirname,'../dist');
-  app.use(express.static(dist,{maxAge:'1h'}));
-  app.use((req,res,next)=>req.method==='GET'?res.sendFile(path.join(dist,'index.html')):next());
+  app.use(express.static(dist,{maxAge:'1h',index:false}));
+  app.use((req,res,next)=>req.method==='GET'?res.sendFile(path.join(dist,'index.html'),{headers:{'Cache-Control':'no-cache'}}):next());
 }
 
 app.use((err,req,res,next)=>{

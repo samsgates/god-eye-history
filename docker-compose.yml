@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgis/postgis:17-3.5
+    platform: linux/amd64
     environment:
       POSTGRES_DB: godeyehistory
       POSTGRES_USER: postgres
@@ -20,11 +21,17 @@ services:
     environment:
       discovery.type: single-node
       plugins.security.disabled: "true"
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: "${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-LocalDev1!OpenSearch}"
       OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
     ports: ["9200:9200"]
   app:
     build: .
     env_file: .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/godeyehistory
+      REDIS_URL: redis://redis:6379
+      OPENSEARCH_URL: http://opensearch:9200
     ports: ["8787:8787"]
     depends_on:
       postgres: {condition: service_healthy}

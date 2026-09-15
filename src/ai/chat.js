@@ -10,7 +10,12 @@ export class HistoryChat{
     this.input=document.getElementById('askInput');
     this.form.addEventListener('submit',e=>{e.preventDefault();this.ask(this.input.value)});
     document.querySelectorAll('.quick-prompts button').forEach(b=>b.onclick=()=>{this.input.value=b.textContent;this.ask(b.textContent)});
+    document.addEventListener('history-context-changed',()=>this.reset());
     this.setupVoice();
+  }
+  reset(){
+    this.messages.innerHTML='<div class="chat assistant">Ask about the selected place, date, event, or anything visible on the globe. I use retrieved historical sources before answering.</div>';
+    this.input.value='';
   }
   open(){this.panel.classList.add('open');this.input.focus()}
   close(){this.panel.classList.remove('open')}
@@ -24,6 +29,9 @@ export class HistoryChat{
         question,provider:state.aiProvider,
         context:{
           date:state.selectedDate,
+          start:state.dateRange.start,
+          end:state.dateRange.end,
+          scope:state.historyScope,
           place:state.place,
           event:state.selectedEvent?{id:state.selectedEvent.id,title:state.selectedEvent.title}:null,
           camera:state.camera,

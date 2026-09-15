@@ -6,13 +6,16 @@ export class ExplorationController{
   constructor(globe,history){this.globe=globe;this.history=history}
   async whatWasHere(){
     const p=state.place;if(!p)return toast('Select a place first');
+    this.history.resetContext();const loadVersion=this.history.loadVersion;
+    update({historyScope:'through-time',dateRange:{start:'1000-01-01',end:'2026-01-01'}});
+    this.history.eventList.innerHTML='<div class="event-card">Searching this place through time…</div>';
     try{
-      const r=await fetch(`/api/history/what-was-here?lat=${p.lat}&lng=${p.lng}&radius=${state.radiusKm}`);
-      const j=await r.json();if(!r.ok)throw new Error(j.error||'Request failed');
+      const j=await api.whatWasHere({lat:p.lat,lng:p.lng,radius:state.radiusKm});
+      if(loadVersion!==this.history.loadVersion)return;
       update({events:j.events||[]});this.globe.renderEvents(state.events);this.history.renderEvents({...j,scope:'through time'});
       document.getElementById('placeTitle').textContent=`What was here? · ${p.name}`;
       document.getElementById('placeSubtitle').textContent='Historical records across time';
-    }catch(e){toast(e.message)}
+    }catch(e){if(loadVersion===this.history.loadVersion)toast(e.message)}
   }
   async era(era){
     const ranges={
@@ -23,10 +26,14 @@ export class ExplorationController{
     };
     const p=state.place;if(!p)return toast('Select a place first');
     const [start,end]=ranges[era]||ranges.modern;
+    this.history.resetContext();const loadVersion=this.history.loadVersion;
+    update({historyScope:'place',dateRange:{start,end}});
+    this.history.eventList.innerHTML='<div class="event-card">Searching this historical era…</div>';
     try{
       const res=await api.events({lat:p.lat,lng:p.lng,radius:Math.max(state.radiusKm,25),start,end});
+      if(loadVersion!==this.history.loadVersion)return;
       update({events:res.events||[]});this.globe.renderEvents(state.events);this.history.renderEvents({...res,scope:era});
-    }catch(e){toast(e.message)}
+    }catch(e){if(loadVersion===this.history.loadVersion)toast(e.message)}
   }
   async browseMedia(){
     const p=state.place;if(!p)return toast('Select a place first');

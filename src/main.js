@@ -17,13 +17,13 @@ async function boot(){
   const config=await api.config().catch(()=>({}));
   const globe=new HistoryGlobe('cesiumContainer',config);
   const history=new HistoryController(globe);
-  const timeline=new TimelineController(()=>state.place&&history.loadEvents(),globe);
+  const timeline=new TimelineController(()=>state.historyScope==='global'?history.sameDayWorldwide():state.place&&history.loadEvents(),globe);
   const compare=new CompareController(globe);
   const present=new PresentController(globe);
   const annotations=new AnnotationController(globe);
   const exploration=new ExplorationController(globe,history);
   const chat=new HistoryChat();
-  const story=new StoryDirector(globe,history);
+  const story=new StoryDirector(globe,history,timeline);
   const panels=new PanelManager({compare,present,story,annotations,globe,history,exploration});
 
   globe.onMapClick=async pos=>{
@@ -34,39 +34,58 @@ async function boot(){
 
   globe.flyTo({lat:20,lng:0,height:17500000});
 
+  let searchVersion=0;
   document.getElementById('searchForm').onsubmit=async e=>{
     e.preventDefault();const q=document.getElementById('searchInput').value.trim();if(!q)return;
+    timeline.stop();
+    const version=++searchVersion;history.beginSearch(q);
     try{
       const res=await api.searchPlaces(q);
-      if(res.intent?.date) timeline.applyDate(res.intent.date);
-      const place=res.places?.[0];if(place)await history.selectPlace(place);
-      else toast('No matching place found');
-    }catch(err){toast(err.message)}
+      if(version!==searchVersion)return;
+      const place=res.places?.[0];
+      if(res.intent?.date) timeline.applyDate(res.intent.date,{notify:false});
+      if(place){
+        if(res.intent?.start)update({dateRange:{start:res.intent.start,end:res.intent.end}});
+        await history.selectPlace(place,{load:false});
+        await history.loadEvents(res.intent?.start?{start:res.intent.start,end:res.intent.end}:{});
+      }
+      else{history.showSearchFailure(q);toast('No matching place found')}
+    }catch(err){if(version===searchVersion){history.showSearchFailure(q,'Search unavailable');toast(err.message)}}
   };
   document.getElementById('askBtn').onclick=()=>chat.open();
   document.getElementById('closeAsk').onclick=()=>chat.close();
   document.getElementById('sameDayBtn').onclick=()=>history.sameDayWorldwide();
   document.getElementById('closeHistory').onclick=()=>document.getElementById('historyPanel').classList.toggle('hidden');
-  document.getElementById('closeEvent').onclick=()=>document.getElementById('eventDrawer').classList.remove('open');
+  document.getElementById('closeEvent').onclick=()=>history.closeEvent();
   document.getElementById('surpriseBtn').onclick=async()=>{
-    const choices=['Rome 44 BC','London 1666','Delhi 1947','Berlin 1989','Pompeii 79 AD','Paris 1789'];
+    const choices=['Rome 64 AD','London 1666','Delhi 1947','Berlin 1989','Pompeii 79 AD','Paris 1789'];
     const q=choices[Math.floor(Math.random()*choices.length)];
     document.getElementById('searchInput').value=q;document.getElementById('searchForm').requestSubmit();
   };
   document.addEventListener('keydown',e=>{
     if(e.key==='/'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){e.preventDefault();document.getElementById('searchInput').focus()}
-    if(e.key==='Escape'){chat.close();document.getElementById('eventDrawer').classList.remove('open');document.getElementById('leftPanel').classList.remove('open')}
+    if(e.key==='Escape'){chat.close();history.closeEvent();document.getElementById('leftPanel').classList.remove('open')}
   });
 
   // share state
   const params=new URLSearchParams(location.search);
+  let restoredShare=false;
   if(params.get('share')){
     try{
       const s=JSON.parse(atob(params.get('share')));
-      if(s.date)timeline.applyDate(s.date);
-      if(s.place)await history.selectPlace(s.place);
+      if(s.date)timeline.applyDate(s.date,{notify:false});
+      if(s.dateRange?.start&&s.dateRange?.end)update({dateRange:s.dateRange});
+      if(s.scope)update({historyScope:s.scope});
+      if(s.radiusKm)update({radiusKm:Number(s.radiusKm)});
+      if(s.place){await history.selectPlace(s.place,{load:s.scope!=='global'});restoredShare=true}
+      if(s.scope==='global'){await history.sameDayWorldwide();restoredShare=true}
+      if(s.camera)await globe.flyTo(s.camera);
+      if(s.eventId)await history.openEvent(s.eventId);
     }catch{}
   }
+  document.addEventListener('history-context-changed',()=>{
+    if(location.search)new URL(location.href).searchParams.has('share')&&globalThis.history.replaceState(null,'',location.pathname);
+  });
   document.getElementById('brandButton').onclick=()=>{
     const url=new URL(location.href);url.search='';url.searchParams.set('share',btoa(JSON.stringify(serializeState())));navigator.clipboard?.writeText(url.href);toast('Shareable view copied');
   };
@@ -82,7 +101,7 @@ async function boot(){
     if(j==='story'){document.querySelector('[data-panel="stories"]').click()}
     if(j==='today'){
       const now=new Date();const md=`${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-      const res=await api.thisDay(md).catch(()=>({events:[]}));update({events:res.events||[]});globe.renderEvents(state.events);history.renderEvents({...res,scope:'global'});
+      await history.thisDay(md);
     }
   });
   if(localStorage.getItem('geh-onboarded'))first.classList.add('hidden');
@@ -90,8 +109,10 @@ async function boot(){
   panels.applyTheme(localStorage.getItem('geh-theme')||'dark');
   document.getElementById('hudAi').textContent=state.aiProvider.toUpperCase();
 
-  const initial=await api.searchPlaces('London').catch(()=>({places:[]}));
-  if(initial.places?.[0]) await history.selectPlace(initial.places[0]);
+  if(!restoredShare&&searchVersion===0&&!state.place){
+    const initial=await api.searchPlaces('London').catch(()=>({places:[]}));
+    if(searchVersion===0&&!state.place&&initial.places?.[0]) await history.selectPlace(initial.places[0]);
+  }
 
   console.info('god-eye-history ready', {provider:state.aiProvider, config});
 }

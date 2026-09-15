@@ -15,13 +15,13 @@ SELECT ?item ?itemLabel ?date ?coord ?article WHERE {
     bd:serviceParam wikibase:center "Point(${Number(lng)} ${Number(lat)})"^^geo:wktLiteral.
     bd:serviceParam wikibase:radius "${radius}".
   }
-  { ?item wdt:P585 ?date. } UNION { ?item wdt:P580 ?date. } UNION { ?item wdt:P571 ?date. }
+  { ?item wdt:P585 ?date. } UNION { ?item wdt:P580 ?date. }
   FILTER(?date >= "${startDate}T00:00:00Z"^^xsd:dateTime && ?date <= "${endDate}T23:59:59Z"^^xsd:dateTime)
   OPTIONAL { ?article schema:about ?item; schema:isPartOf <https://en.wikipedia.org/>. }
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 } LIMIT ${Math.min(200,limit)}
 `;
-  const key=`wd:${lat.toFixed(3)}:${lng.toFixed(3)}:${radius}:${startDate}:${endDate}`;
+  const key=`wd:v2:${lat.toFixed(3)}:${lng.toFixed(3)}:${radius}:${startDate}:${endDate}`;
   return cached(key,86400,async()=>{
     const url=`${WDQS}?format=json&query=${encodeURIComponent(query)}`;
     const json=await fetchJson(url,{timeout:15000,headers:{'user-agent':'god-eye-history/1.0 (historical research viewer)'}});
@@ -45,12 +45,12 @@ export async function wikidataSameDay(date,limit=120){
   const query=`
 SELECT ?item ?itemLabel ?date ?coord WHERE {
   ?item wdt:P625 ?coord.
-  { ?item wdt:P585 ?date. } UNION { ?item wdt:P580 ?date. } UNION { ?item wdt:P571 ?date. }
+  { ?item wdt:P585 ?date. } UNION { ?item wdt:P580 ?date. }
   FILTER(MONTH(?date)=${Number(md.slice(0,2))} && DAY(?date)=${Number(md.slice(3,5))} && YEAR(?date)=${year})
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 } LIMIT ${Math.min(300,limit)}
 `;
-  return cached(`wdday:${date}`,86400,async()=>{
+  return cached(`wdday:v2:${date}`,86400,async()=>{
     const json=await fetchJson(`${WDQS}?format=json&query=${encodeURIComponent(query)}`,{timeout:18000});
     return (json.results?.bindings||[]).map(b=>{
       const m=/Point\(([-\d.]+) ([-\d.]+)\)/.exec(b.coord?.value||'');if(!m)return null;

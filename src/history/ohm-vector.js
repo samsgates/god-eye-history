@@ -1,5 +1,5 @@
 import { VectorTile } from '@mapbox/vector-tile';
-import Protobuf from 'pbf';
+import { PbfReader } from 'pbf';
 import { Cartesian3, Color, PolygonHierarchy } from 'cesium';
 
 function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z))}
@@ -50,7 +50,7 @@ export class OHMVectorLayer {
       if(signal.aborted)return;
       this.clear();let budget=1400;
       for(const t of buffers){
-        const tile=new VectorTile(new Protobuf(t.buf));
+        const tile=new VectorTile(new PbfReader(t.buf));
         for(const layer of Object.values(tile.layers||{})){
           for(let i=0;i<layer.length && budget>0;i++){
             const f=layer.feature(i);const props=f.properties||{};if(!visibleAt(props,this.year))continue;

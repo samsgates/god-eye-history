@@ -4,6 +4,8 @@ export const state = {
   mode: 'history',
   selectedDate: '1960-08-15',
   selectedYear: 1960,
+  dateRange: {start:'1960-08-15',end:'1960-08-15'},
+  historyScope: 'place',
   place: null,
   camera: null,
   events: [],
@@ -31,7 +33,9 @@ export function setDate(date){
 export function serializeState(){
   return {
     mode: state.mode,
+    scope: state.historyScope,
     date: state.selectedDate,
+    dateRange: state.dateRange,
     place: state.place ? {name:state.place.name, lat:state.place.lat, lng:state.place.lng, id:state.place.id}:null,
     camera: state.camera,
     layers:[...state.historicalLayers],

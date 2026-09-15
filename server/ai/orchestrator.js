@@ -35,8 +35,8 @@ function heuristicConfidence(events=[]){
 export async function askHistory({question,context={},provider='auto'}){
   // Retrieval-first. This guarantees grounded fallback even without any AI key.
   let evidence={events:[]};
-  if(context.place?.lat!=null){
-    evidence=await searchEvents({lat:context.place.lat,lng:context.place.lng,radius:15,start:context.date,end:context.date});
+  if(context.scope!=='global'&&context.place?.lat!=null){
+    evidence=await searchEvents({lat:context.place.lat,lng:context.place.lng,radius:15,start:context.start||context.date,end:context.end||context.date});
   } else if(context.date) evidence=await sameDay(context.date);
   const sources=evidenceSources(evidence.events);
   const evidenceText=JSON.stringify({

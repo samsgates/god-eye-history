@@ -20,7 +20,7 @@ export async function searchEvents(input){
       WHERE location IS NOT NULL
         AND ST_DWithin(location, ST_SetSRID(ST_MakePoint($1,$2),4326)::geography, $3)
         AND (date_start IS NULL OR date_start <= $5::date)
-        AND (date_end IS NULL OR date_end >= $4::date)
+        AND (COALESCE(date_end,date_start) IS NULL OR COALESCE(date_end,date_start) >= $4::date)
       ORDER BY importance_score DESC NULLS LAST LIMIT 250
     `,[lng,lat,kmToMeters(radius),input.start,input.end||input.start]);
     events=(r?.rows||[]).map(normalizeEvent);used='database';
@@ -36,7 +36,10 @@ export async function searchEvents(input){
   const cats=(input.categories||'').split(',').filter(Boolean);
   if(cats.length)events=events.filter(e=>!e.categories.length||e.categories.some(c=>cats.includes(c)));
   events=events.map(e=>({...e,_score:scoreEvent(e,input)})).sort((a,b)=>b._score-a._score).slice(0,150);
-  let media=[];try{media=await nearbyMedia({lat,lng,radius:Math.min(radius*1000,10000),limit:20})}catch{}
+  let media=[];
+  if(input.includeMedia!==false&&input.includeMedia!=='false'){
+    try{media=await nearbyMedia({lat,lng,radius:Math.min(radius*1000,10000),limit:20})}catch{}
+  }
   return {events,scope,source:used,media_count:media.length,confidence:events.length?events.reduce((s,e)=>s+e.confidence_score,0)/events.length:.45};
 }
 
